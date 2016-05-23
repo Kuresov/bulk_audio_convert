@@ -1,6 +1,7 @@
 defmodule BulkAudioConvert do
   @doc """
-  Converts all files with declared valid extensions to .mp3's.
+  Converts all files with declared valid extensions to .mp3's using ffmpeg.
+  Pass true to show generated commands without executing them.
   """
 
   @valid_ext [".ogg",".opus"]
@@ -33,7 +34,7 @@ defmodule BulkAudioConvert do
     end
   end
 
-  defp listen(n) do
+  def listen(n) do
     cond do
       n > 0 ->
         receive do
@@ -70,8 +71,13 @@ defmodule BulkAudioConvert do
     )
   end
 
+  @doc "Run an arbitrary system command. Requires a command array and parent PID."
   def run_cmd(cmd, parent_pid) do
-    {_, exit_code} = System.cmd(hd(cmd), tl(cmd))
-    send(parent_pid, {:ok, "Exited with #{exit_code}" })
+    status = System.cmd(hd(cmd), tl(cmd))
+
+    case status do
+      {_, 0} -> send(parent_pid, {:ok, "#{self()} Exited successfully." })
+      _ -> send(parent_pid, {:ok, "#{self()} Exited with error: #{status}" })
+    end
   end
 end

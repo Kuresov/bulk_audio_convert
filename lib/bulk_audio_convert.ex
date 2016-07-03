@@ -1,12 +1,19 @@
 defmodule BulkAudioConvert do
   @doc """
   Converts all files with declared valid extensions to .mp3's using ffmpeg.
-  Pass true to show generated commands without executing them.
+  Pass -d (dry run) to show generated commands without executing them.
   """
 
   @valid_ext [".ogg",".opus"]
 
-  def start(dry_run), do: convert(get_files, dry_run)
+  def main(args) do
+    {opts, _, _} = args |> parse_args
+    convert(get_files, opts[:dry])
+  end
+
+  def parse_args(args) do
+    OptionParser.parse(args, strict: [dry: :boolean])
+  end
 
   def get_files, do: File.ls
 
@@ -26,7 +33,9 @@ defmodule BulkAudioConvert do
       end
 
     case dry_run do
-      true -> commands
+      true ->
+        IO.puts(elem(commands, 1) |> Enum.map(&Enum.join(&1, " ")))
+        IO.puts("\n")
       false ->
         run_cmds(commands)
         {_, cmd_arr} = commands

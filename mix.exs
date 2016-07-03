@@ -4,9 +4,10 @@ defmodule BulkAudioConvert.Mixfile do
   def project do
     [app: :bulk_audio_convert,
      version: "0.0.1",
-     elixir: "~> 1.2",
+     elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     escript: [main_module: BulkAudioConvert],
      deps: deps]
   end
 

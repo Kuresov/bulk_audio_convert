@@ -1,4 +1,4 @@
-defmodule BulkAudioConvert do
+ defmodule BulkAudioConvert do
   @doc """
   Converts all files with declared valid extensions to .mp3's using ffmpeg.
   Pass -d (dry run) to show generated commands without executing them.
@@ -34,9 +34,9 @@ defmodule BulkAudioConvert do
 
     case dry_run do
       true ->
-        IO.puts(elem(commands, 1) |> Enum.map(&Enum.join(&1, " ")))
-        IO.puts("\n")
-      false ->
+        elem(commands, 1)
+        |> Enum.map( fn(cmd_arr) -> IO.puts("#{Enum.join(cmd_arr, " ")}") end )
+      _ ->
         run_cmds(commands)
         {_, cmd_arr} = commands
         listen(Enum.count(cmd_arr))
@@ -75,18 +75,18 @@ defmodule BulkAudioConvert do
   def run_cmds({:error, reason}), do: raise reason
   def run_cmds({:ok, cmds}) do
     IO.puts "Starting commands..."
-    Enum.map( cmds,
-      fn(cmd) -> spawn_link(__MODULE__, :run_cmd, [cmd, self()]) end
-    )
+    cmds
+    |> Enum.with_index
+    |> Enum.each( fn({cmd, i}) -> spawn_link(__MODULE__, :run_cmd, [cmd, i, self()]) end )
   end
 
   @doc "Run an arbitrary system command. Requires a command array and parent PID."
-  def run_cmd(cmd, parent_pid) do
+  def run_cmd(cmd, index_id, parent_pid) do
     status = System.cmd(hd(cmd), tl(cmd))
 
     case status do
-      {_, 0} -> send(parent_pid, {:ok, "#{self()} Exited successfully." })
-      _ -> send(parent_pid, {:ok, "#{self()} Exited with error: #{status}" })
+      {_, 0} -> send(parent_pid, {:ok, "#{index_id} Exited successfully." })
+      _ -> send(parent_pid, {:ok, "#{index_id} Exited with error: #{status}" })
     end
   end
 end
